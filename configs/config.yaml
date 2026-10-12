@@ -1,0 +1,61 @@
+# Experiment configuration. All independent variables and controlled
+# parameters live here; nothing is hard-coded in src/.
+
+experiment:
+  name: phishing_ml_benchmark
+  seed: 42                       # controlled: global random seed
+  output_dir: results
+  log_file: logs/run.log
+
+data:
+  path: data/sample/phishing_sample.csv   # replace with the full dataset in Week 7
+  target_column: label                    # 1 = phishing, 0 = legitimate
+  test_size: 0.3                          # controlled: identical split for all runs
+  stratify: true
+
+# Independent variable 1 (RQ1, RQ2): machine learning algorithm
+algorithms:
+  logistic_regression:            # BASELINE
+    C: 1.0
+    max_iter: 1000
+  decision_tree:
+    max_depth: 10
+  random_forest:
+    n_estimators: 100
+    max_depth: null
+  svm:
+    kernel: rbf
+    C: 1.0
+  knn:
+    n_neighbors: 3
+  gradient_boosting:
+    n_estimators: 100
+    learning_rate: 0.1
+  adaboost:
+    n_estimators: 50
+
+# Independent variable 2 (RQ3 / H3): feature selection method
+feature_selection:
+  - method: none                  # all features (reference for H3)
+  - method: mutual_info           # SelectKBest(mutual_info_classif)
+    k: 5
+  - method: rf_importance         # top-k by RandomForest importance
+    k: 5
+  - method: pca                   # PCA projection
+    n_components: 5
+
+# Measurement protocol
+measurement:
+  inference_repeats: 20           # repeats for per-sample latency estimate
+  warmup_runs: 2
+  timeout_seconds: 600            # max time per (algorithm, selection) run
+
+# Baseline and guardrails (see METHODOLOGY_CARD.md)
+baseline:
+  algorithm: logistic_regression
+  feature_selection: none
+
+guardrails:
+  min_recall: 0.90                # phishing recall must stay >= 0.90
+  max_inference_ms_per_sample: 5.0
+  max_train_ram_mb: 1024
