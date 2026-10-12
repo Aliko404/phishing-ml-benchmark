@@ -1,0 +1,11 @@
+name: phishing-ml-benchmark
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - pip=25.2
+  - pip:
+      - numpy==2.5.3
+      - pandas==3.0.5
+      - scikit-learn==1.9.1
+      - PyYAML==6.0.3

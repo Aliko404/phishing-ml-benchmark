@@ -1,0 +1,54 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache / build
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs and experiment outputs (keep folder, ignore content)
+*.log
+logs/
+results/*
+!results/.gitkeep
+
+# Data: only the micro sample is tracked
+data/*
+!data/sample/
+!data/sample/**
+data/raw/
+data/processed/
+
+# Binary data and model weights
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+*.npy
+*.npz
+*.parquet
+*.zip
+*.tar.gz
+
+# Secrets
+.env
+*.key
+*.pem
+secrets.*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
