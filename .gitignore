@@ -1,3 +1,4 @@
+# Python / Jupyter
 .venv/
 venv/
 __pycache__/
@@ -5,12 +6,14 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .env
+.env.*
+!.env.example
+# Generated local outputs
 logs/
 results/
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
 *.zip
-
-data/external/
+# Never track large raw datasets or full hardware-specific telemetry
+data/external/*.csv
+data/raw/*
+!data/raw/test_run_sample.jsonl
+# Keep the small processed summary CSV for instructor review.

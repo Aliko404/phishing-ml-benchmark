@@ -1,4 +1,4 @@
-"""Task 3 telemetry cleaning, guardrail accounting, statistics and seeded bootstrap CIs."""
+"""Process inference telemetry, error rates, descriptive statistics and bootstrap confidence intervals."""
 from __future__ import annotations
 import argparse, json
 from pathlib import Path

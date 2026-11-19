@@ -1,0 +1,19 @@
+{
+  "dataset": "UCI Phishing Websites",
+  "uci_id": 327,
+  "source_url": "https://archive.ics.uci.edu/dataset/327/phishing+websites",
+  "citation": "https://doi.org/10.24432/C51W2X",
+  "rows": 11055,
+  "features": 30,
+  "labels": {
+    "0": "legitimate",
+    "1": "phishing"
+  },
+  "label_mapping": {
+    "UCI -1": "phishing -> 1",
+    "UCI +1": "legitimate -> 0"
+  },
+  "dataset_csv_sha256": "7f2a945b8e8293a80313ed3ea1a690901c3cabfd1a4b969c6ec31824e1d5eefe",
+  "python": "3.13.5",
+  "note": "Original source records; no synthetic observations. CSV is locally re-encoded."
+}

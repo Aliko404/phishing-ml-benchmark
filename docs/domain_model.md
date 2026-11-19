@@ -1,6 +1,6 @@
-# Task 3 — ML Domain Model and Mathematical Formalization
+# Mathematical Model and Evaluation Metrics
 
-**Research track:** Machine Learning / AI. **Task:** binary phishing-site classification with measurable prediction latency. This document formalizes the evaluated pipeline rather than claiming every classifier optimizes the same loss.
+**Research track:** Machine Learning / AI. **Objective:** binary phishing-site classification with measurable prediction latency. This document formalizes the evaluated pipeline rather than claiming every classifier optimizes the same loss.
 
 ## 1. System and feature pipeline
 
