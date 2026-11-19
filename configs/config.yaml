@@ -8,7 +8,7 @@ experiment:
   log_file: logs/run.log
 
 data:
-  path: data/sample/phishing_sample.csv   # replace with the full dataset in Week 7
+  path: data/sample/phishing_sample.csv   # demonstration data; use --data for full UCI experiments
   target_column: label                    # 1 = phishing, 0 = legitimate
   test_size: 0.3                          # controlled: identical split for all runs
   stratify: true
