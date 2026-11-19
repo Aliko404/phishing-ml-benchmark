@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel, SelectKBest, mutual_info_classif
 
 
-def build_selector(spec: dict, n_features: int, seed: int):
+def build_selector(spec: dict, n_features: int, seed: int, n_train: int | None = None):
     method = spec["method"]
     if method == "none":
         return None
@@ -25,6 +25,6 @@ def build_selector(spec: dict, n_features: int, seed: int):
         rf = RandomForestClassifier(n_estimators=50, random_state=seed)
         return SelectFromModel(rf, max_features=k, threshold=-float("inf"))
     if method == "pca":
-        n = min(spec.get("n_components", 5), n_features)
+        n = min(spec.get("n_components", 5), n_features, n_train if n_train is not None else n_features)
         return PCA(n_components=n, random_state=seed)
     raise ValueError(f"Unknown feature-selection method '{method}'")

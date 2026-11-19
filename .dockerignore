@@ -1,8 +1,7 @@
-.git
 .venv/
 __pycache__/
+.ipynb_checkpoints/
+.git/
+data/raw/*.jsonl
+reports/figures/
 results/
-logs/
-notebooks/
-data/raw/
-data/processed/

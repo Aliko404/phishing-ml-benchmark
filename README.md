@@ -1,108 +1,55 @@
-# Machine Learning Approaches for Phishing Website Detection: A Comparative Performance Analysis
+# Phishing ML Benchmark — Task 3 (real UCI observations)
 
-**Authors:** Alinur Bedelkhan, Agadilkhan Nurdaulet
-**Affiliation:** Narxoz University
-**Status:** Week 6 — measurement pipeline ready, smoke-tested on a micro sample.
+**Status:** Reproducible measurement pipeline with recorded UCI inference telemetry. Measurements depend on the machine used and should be regenerated on your Linux system.
 
-## Overview
+## Source and scientific distinction
+- **Input:** UCI Machine Learning Repository, *Phishing Websites*, dataset **327**, 11,055 real labeled website examples, 30 numeric features; DOI: https://doi.org/10.24432/C51W2X.
+- **Telemetry:** Each JSONL entry will be a **real elapsed-time measurement** of an actual trained classifier `predict()` call on those data, collected locally on Linux with `time.perf_counter()`. The publicly available input CSV is **not** a set of network traffic logs.
+- Label mapping: UCI `-1` = phishing => project `1`; UCI `+1` = legitimate => project `0`.
+- The 10-row CSV in `data/sample/` is solely a smoke-test fixture, not research data. Previous toy logs and plots are excluded from this release.
 
-Phishing websites are created and modified faster than blacklists can follow, which makes
-machine learning an attractive detection approach. Existing studies often report high accuracy
-but use different datasets, feature sets and splits, and rarely report computational cost
-or the effect of feature selection together. This repository contains a reproducible benchmark
-that compares classical ML classifiers on **one dataset, one feature set and one split**, and
-measures how **feature selection** changes detection quality and inference cost.
-
-## Research Question
-
-> **RQ:** How do classical machine learning algorithms compare in phishing website detection
-> (accuracy, precision, recall, F1, inference time), and how does feature selection affect
-> their performance and computational efficiency?
-
-Sub-questions: RQ1 (achievable accuracy), RQ2 (algorithm comparison), RQ3 (effect of feature selection).
-The full methodology (hypotheses, variable matrix, metrics, baseline) is in
-[`docs/METHODOLOGY_CARD.md`](docs/METHODOLOGY_CARD.md).
-
-## Planned Benchmarks
-
-| ID | Independent variable | Levels | Primary output |
-|----|----------------------|--------|----------------|
-| B1 | ML algorithm | Logistic Regression (baseline), Decision Tree, Random Forest, SVM, KNN, Gradient Boosting, AdaBoost | F1, accuracy, precision, recall |
-| B2 | ML algorithm | same as B1 | inference time (ms/sample), train time, peak RAM |
-| B3 | Feature selection | none, mutual information (top-k), RF importance (top-k), PCA | ΔF1 and Δinference time vs. "none" |
-
-Each (algorithm × feature selection) pair is one run: 7 × 4 = 28 runs per dataset.
-
-## System Requirements
-
-- Docker 24+ **or** Python 3.13
-- ≥ 2 GB RAM, ≥ 1 CPU core (the sample run takes ~10 s)
-- Linux / macOS / Windows (WSL2 for Docker)
-
-## Quickstart
-
-With Docker (3 commands):
+## Linux Quickstart — collect actual measurements
+Use Python 3.11 (required by the pinned environment). Run all commands at repository root:
 
 ```bash
-git clone https://github.com/Aliko404/phishing-ml-benchmark.git && cd phishing-ml-benchmark
-docker build -t phishing-bench .
-docker run --rm -v "$(pwd)/results:/app/results" phishing-bench
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m src.download_uci
+python -m src.collect_inference --data data/external/uci327_phishing_websites.csv --out data/raw/test_run.jsonl --runs 120
+python -m src.process_data --input data/raw/test_run.jsonl
+python -m src.visualize --input data/raw/test_run.jsonl
+jupyter lab notebooks/01_data_analysis.ipynb
 ```
 
-Without Docker:
+In Jupyter use **Kernel → Restart & Run All**, then save to preserve outputs. Verify the notebook displays calculated statistics and plots.
 
-```bash
-pip install -r requirements.txt   # or: conda env create -f environment.yml
-python -m src.main --config configs/config.yaml
-```
+`python -m src.download_uci` requires internet **only on first download**. The ZIP includes a local copy of the downloaded UCI dataset for offline auditing; `.gitignore` excludes it from future Git commits. For a verified audit, examine `data/external/uci327_provenance.json` (local dataset SHA256) and `dataset_sha256` in every JSONL record.
 
-The run uses `data/sample/phishing_sample.csv` (10 rows) and writes
-`results/results.csv` and `logs/run.log`. To run on the full dataset (Week 7), pass
-`--data data/raw/<file>.csv` (the file is not tracked by git).
+## Methodology (Task 3)
+A fixed stratified train/test split (`random_state=42`) trains Logistic Regression (baseline) and Random Forest. For each model and batch size (1, 2, 4, 6, 9), `--runs 120` runs 12 warm-up calls followed by 108 benchmark calls (per condition); elapsed milliseconds are measured from actual `predict()` operations. Logging happens after timing. This is a **CPU inference benchmark**, not real website HTTP traffic, true production throughput or RPS.
 
-## Repository Structure
+`src/process_data.py` validates the log schema, excludes `phase='warmup'`, reports per-model error rate and median, p25/p75, p95/p99, and 2,000 seeded bootstrap resamples for the 95% CI of the median. The bootstrap characterizes repeat-call variability on this setup, not uncertainty across websites or hardware. `src/visualize.py` creates two figures (PDF and 300-DPI PNG) in `reports/figures/`; axes have units, and the latency chart shows uncertainty bars. `docs/domain_model.md` provides ML mathematical notation.
 
-```
-phishing-ml-benchmark/
-├── configs/
-│   └── config.yaml          # all experiment parameters (independent variables, seeds, guardrails)
-├── data/
-│   └── sample/              # 10-row sample for pipeline smoke tests (full data is git-ignored)
-├── docs/
-│   └── METHODOLOGY_CARD.md  # Methodology Passport Card (Task 2)
-├── notebooks/               # exploratory analysis (checkpoints are git-ignored)
-├── results/                 # generated outputs (git-ignored except .gitkeep)
-├── src/
-│   ├── data.py              # loading + fixed stratified split
-│   ├── models.py            # algorithm registry
-│   ├── features.py          # feature-selection methods
-│   ├── metrics.py           # accuracy/precision/recall/F1, latency, RAM
-│   ├── benchmark.py         # algorithm × feature-selection loop, guardrails, baseline delta
-│   └── main.py              # CLI entry point
-├── Dockerfile
-├── environment.yml
-├── requirements.txt
-└── LICENSE
-```
+## Experiment artifacts
+- `data/raw/test_run.jsonl` — measured warm-up and benchmark telemetry (not committed)
+- `data/processed/metrics_summary.csv` — real, reproducible summary table
+- `reports/figures/fig1_latency_vs_load.pdf` and `.png`
+- `reports/figures/fig2_distribution_boxplot.pdf` and `.png`
+- `notebooks/01_data_analysis.ipynb` — executed from scratch with its outputs
 
-## Output Format
+### Results & Discussion
+The archive includes measured inference telemetry and a grouped summary in [`data/processed/metrics_summary.csv`](data/processed/metrics_summary.csv). These measurements were recorded on the machine that produced the logs; regenerate them on your own Linux machine for reproducible hardware-specific results. The figures below summarize those recorded observations. No claim about production HTTP traffic or general model superiority follows from these measurements.
 
-`results/results.csv` has one row per run with: `algorithm`, `feature_selection`,
-`n_features_used`, `accuracy`, `precision`, `recall`, `f1`, `train_time_s`, `train_ram_mb`,
-`inference_ms_per_sample`, `guardrails_pass`, `f1_delta_vs_baseline`, `status`.
+![Inference latency versus batch size](reports/figures/fig1_latency_vs_load.png)
 
-## Reproducibility Notes
+![Inference latency distribution](reports/figures/fig2_distribution_boxplot.png) Comparing only inference latency does **not** establish phishing detection accuracy; run the separate `src.main` 7×4 benchmark for classification metrics after adapting the dataset configuration.
 
-- Dependencies are pinned to exact versions; global seed is `experiment.seed` (default 42).
-- Feature selectors and scalers are fitted on the training split only (no leakage).
-- The sample CSV is **synthetic** and exists only to verify the pipeline; its metrics are meaningless.
-- Week 7 will replace the single hold-out split with repeated stratified k-fold and statistical tests.
+### Integrity / limitations
+The UCI dataset contains derived URL/site attributes, not request arrival times or HTTP status. HTTP-like `status_code` in our JSONL is a **local success/failure marker** (`200` for successful predict, `500` for exception), not a true response from a web server. Measured runtime depends on hardware and concurrent load. Batch size is not requests per second. For a full research claim, assess classification F1/recall with held-out data and repeated cross-validation and discuss dataset provenance / representativeness.
 
-## License and Citation
+## Repository hygiene
+`data/raw/`, `data/external/`, temporary logs, `.venv/` and machine-specific result CSVs are excluded by `.gitignore`. Review generated figures and notebook before committing them. Old committed dumps must be untracked (`git rm --cached data/raw/sample_test_run.jsonl`) and, if necessary, removed from history with coordinated `git filter-repo`.
 
-Released under the MIT License (see `LICENSE`). If you use this work, please cite:
-
-```
-Bedelkhan Alinur, Agadilkhan Nurdaulet. (2026). Machine Learning Approaches for Phishing Website
-Detection: A Comparative Performance Analysis. GitHub repository.
-```
+## Reproduction & citation
+Source: [UCI 327 Phishing Websites](https://archive.ics.uci.edu/dataset/327/phishing+websites), DOI 10.24432/C51W2X. See [domain model](docs/domain_model.md) and [data provenance](docs/REAL_DATA_PROVENANCE.md). Source code released under the included MIT LICENSE; source dataset retains its own terms.

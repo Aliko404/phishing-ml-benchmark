@@ -36,14 +36,14 @@ def run_benchmark(cfg: dict) -> pd.DataFrame:
     for fs_spec in cfg["feature_selection"]:
         for algo, params in cfg["algorithms"].items():
             steps = [("scale", StandardScaler())]
-            selector = build_selector(fs_spec, n_features, seed)
+            selector = build_selector(fs_spec, n_features, seed, n_train=len(X_train))
             if selector is not None:
                 steps.append(("select", selector))
             steps.append(("clf", build_model(algo, params, seed)))
             pipe = Pipeline(steps)
 
             row = {"algorithm": algo, "feature_selection": fs_spec["method"],
-                   "n_features_used": n_features, "status": "ok"}
+                   "n_features_used": n_features, "status": "ok", "n_train":len(X_train), "n_test":len(X_test), "seed":seed}
             try:
                 if hasattr(signal, "SIGALRM"):
                     signal.signal(signal.SIGALRM, _alarm)
@@ -52,7 +52,8 @@ def run_benchmark(cfg: dict) -> pd.DataFrame:
                 y_pred = pipe.predict(X_test)
                 row.update(quality_metrics(y_test, y_pred))
                 row["train_time_s"] = train_s
-                row["train_ram_mb"] = ram_mb
+                row["python_alloc_peak_mb"] = ram_mb
+                row["train_ram_mb"] = ram_mb  # compatibility only: NOT full process RSS
                 row["inference_ms_per_sample"] = inference_ms_per_sample(
                     pipe, X_test, meas["inference_repeats"], meas["warmup_runs"]
                 )
@@ -80,6 +81,9 @@ def run_benchmark(cfg: dict) -> pd.DataFrame:
 def add_guardrails(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     g = cfg["guardrails"]
     ok = df["status"] == "ok"
+    if "recall" not in df: df["recall"] = float("nan")
+    if "inference_ms_per_sample" not in df: df["inference_ms_per_sample"] = float("nan")
+    if "train_ram_mb" not in df: df["train_ram_mb"] = float("nan")
     df["guardrails_pass"] = (
         ok
         & (df["recall"] >= g["min_recall"])
