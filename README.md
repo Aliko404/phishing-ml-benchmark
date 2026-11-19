@@ -22,7 +22,7 @@ python -m src.visualize --input data/raw/test_run.jsonl
 jupyter lab notebooks/01_data_analysis.ipynb
 ```
 
-In Jupyter use **Kernel → Restart & Run All**, then save to preserve outputs. Verify the notebook displays calculated statistics and plots.
+In Jupyter use **Kernel → Restart & Run All**, then save to preserve outputs. On a fresh GitHub clone without `data/raw/test_run.jsonl`, the notebook uses the committed 130-call sample **only as a demonstration** and saves outputs to separate sample-preview paths. Run `bash run_dataset.sh` first for the complete dataset-based experiment.
 
 `python -m src.download_uci` requires internet **only on first download**. The GitHub repository does not include the dataset CSV. Download it from UCI using `python -m src.download_uci`. Dataset provenance and checksums are documented in the repository. For data integrity verification, examine `data/external/uci327_provenance.json` (local dataset SHA256) and `dataset_sha256` in every JSONL record.
 
@@ -36,14 +36,30 @@ A fixed stratified train/test split (`random_state=42`) trains Logistic Regressi
 - `data/processed/metrics_summary.csv` — saved summary of the full local run (committed; reproduce by running the experiment on Linux)
 - `reports/figures/fig1_latency_vs_load.pdf` and `.png`
 - `reports/figures/fig2_distribution_boxplot.pdf` and `.png`
-- `notebooks/01_data_analysis.ipynb` — executed from scratch with its outputs
+- `notebooks/01_data_analysis.ipynb` — rerunnable; if the full raw log is absent, the committed 130-call sample is used strictly as a preview without replacing published full-run CSV or figures
 
 ### Results & Discussion
 The archive includes measured inference telemetry and a grouped summary in [`data/processed/metrics_summary.csv`](data/processed/metrics_summary.csv). These measurements were recorded on the machine that produced the logs; regenerate them on your own Linux machine for reproducible hardware-specific results. The figures below summarize those recorded observations. No claim about production HTTP traffic or general model superiority follows from these measurements.
 
+### Recorded inference comparison (saved full-run summary)
+
+The following figures come from the committed `metrics_summary.csv` (108 successful post-warm-up calls per model/batch condition). They are **machine-specific historical measurements**, not results recomputed from the 130-row sample committed to Git. A fresh Linux run will produce different absolute timings.
+
+| Batch size | Logistic Regression median (ms) [95% bootstrap CI] | Random Forest median (ms) [95% bootstrap CI] |
+|:--|--:|--:|
+| 1 | 2.187 [2.172, 2.199] | 13.980 [13.939, 14.045] |
+| 2 | 1.736 [1.721, 1.749] | 14.974 [14.657, 15.082] |
+| 4 | 1.708 [1.702, 1.719] | 14.175 [14.139, 14.238] |
+| 6 | 1.720 [1.707, 1.728] | 14.297 [14.214, 14.389] |
+| 9 | 1.706 [1.689, 1.726] | 14.702 [14.566, 15.162] |
+
+Both variants reported 0% failed calls in this saved run. These inference-timing numbers do **not** establish model detection quality.
+
 ![Inference latency versus batch size](reports/figures/fig1_latency_vs_load.png)
 
-![Inference latency distribution](reports/figures/fig2_distribution_boxplot.png) Comparing only inference latency does **not** establish phishing detection accuracy; run the separate `src.main` 7×4 benchmark for classification metrics after adapting the dataset configuration.
+![Inference latency distribution](reports/figures/fig2_distribution_boxplot.png)
+
+Comparing only inference latency does **not** establish phishing detection accuracy; run the separate `src.main` 7×4 benchmark for classification metrics after adapting the dataset configuration.
 
 ### Integrity / limitations
 The UCI dataset contains derived URL/site attributes, not request arrival times or HTTP status. HTTP-like `status_code` in our JSONL is a **local success/failure marker** (`200` for successful predict, `500` for exception), not a true response from a web server. Measured runtime depends on hardware and concurrent load. Batch size is not requests per second. For a full research claim, assess classification F1/recall with held-out data and repeated cross-validation and discuss dataset provenance / representativeness.

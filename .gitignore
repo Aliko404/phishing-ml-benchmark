@@ -17,3 +17,7 @@ data/external/*.csv
 data/raw/*
 !data/raw/test_run_sample.jsonl
 # Keep the small processed summary CSV for instructor review.
+
+# Notebook sample-only preview artifacts
+data/processed/sample_metrics_summary.csv
+reports/figures/sample_preview/
